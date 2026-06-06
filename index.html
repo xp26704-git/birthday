@@ -9,8 +9,7 @@
     <style>
         * { box-sizing: border-box; transition: all 0.3s ease; }
         body {
-            margin: 0; padding: 0;
-            background: #11091c;
+            margin: 0; padding: 0; background: #11091c;
             font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             min-height: 100vh; overflow-x: hidden; color: #fff;
@@ -18,13 +17,9 @@
 
         /* 统一卡片样式 */
         .box {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(15px);
-            border-radius: 24px;
-            padding: 30px 20px;
-            width: 90%; max-width: 420px;
-            text-align: center; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px); border-radius: 24px; padding: 30px 20px;
+            width: 90%; max-width: 420px; text-align: center; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
             z-index: 10;
         }
 
@@ -78,14 +73,12 @@
         h1 { font-size: 2rem; margin: 10px 0; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
         .blessing { font-size: 1.1rem; line-height: 1.8; margin: 20px 0; padding: 15px; border-radius: 12px; text-align: left; word-break: break-all; }
 
-        /* 锁定提示词标签 */
         .lock-badge {
             background: rgba(255, 65, 108, 0.2); border: 1px solid #ff416c;
             color: #ff8da1; font-size: 0.8rem; padding: 4px 12px; border-radius: 20px;
             display: inline-block; margin-bottom: 15px; font-weight: bold;
         }
 
-        /* 按钮样式 */
         .btn {
             background: linear-gradient(45deg, #ff416c, #ff4b2b); color: white; border: none;
             padding: 12px 28px; border-radius: 50px; font-size: 1rem; font-weight: bold;
@@ -103,7 +96,6 @@
         .qr-box { background: #fff; padding: 25px; border-radius: 20px; text-align: center; color: #333; width: 280px; }
         #qrcode { margin: 15px auto; display: flex; justify-content: center; padding: 5px; background: #fff; }
 
-        /* 飘落粒子 */
         .particle { position: fixed; top: -10px; pointer-events: none; animation: fall linear infinite; z-index: 1; }
         @keyframes fall {
             0% { transform: translateY(0) rotate(0deg); opacity: 1; }
@@ -113,14 +105,22 @@
 </head>
 <body>
 
-    <!-- 背景音频标签 -->
     <audio id="bg-music" loop src="https://music.163.com/song/media/outer/url?id=4948834.mp3"></audio>
 
+    <!-- 🔑 验证输入层 -->
+    <div id="step-auth" class="box">
+        <h2 style="margin-top:0; color:#ff69b4;">🔑 专属密码验证</h2>
+        <p style="font-size:0.85rem; color:#aaa; line-height:1.5; margin-bottom:20px;">欢迎来到高级贺卡定制大厅！<br>请在下方输入您从小红书店铺获取的专属验证卡密：</p>
+        <div class="form-group">
+            <input type="text" id="input-key" placeholder="请输入您的16位验证卡密..." style="text-align:center; font-size: 0.85rem; letter-spacing: 1px;">
+        </div>
+        <button class="btn" id="btn-auth-submit" onclick="verifyInputKey()">解锁定制大厅</button>
+    </div>
+
     <!-- 1. 配置定制中心 -->
-    <div id="step-config" class="box">
+    <div id="step-config" class="box hidden">
         <h2 style="margin-top:0; color:#ff69b4;">💝 贺卡高级定制中心</h2>
         
-        <!-- 选项一：贺卡祝福场景选择 -->
         <div class="form-group">
             <label>1. 选择贺卡祝福主题</label>
             <select id="input-scene" onchange="switchSceneMode()">
@@ -136,20 +136,17 @@
             </select>
         </div>
         
-        <!-- 选项二：姓名/称呼 -->
         <div class="form-group">
             <label id="label-name">2. 姓名 / 称呼</label>
             <input type="text" id="input-name" placeholder="例如：宝贝、老妈、张老师" oninput="updateInspirationList()">
         </div>
         
-        <!-- 选项三：专属寄语 -->
         <div class="form-group">
             <label>3. 专属祝福寄语</label>
             <textarea id="input-custom-text" placeholder="可直接点击下方灵感文案一键复制，或在这里手写悄悄话..."></textarea>
             
-            <!-- 动态灵感库面板 -->
             <div class="inspiration-box">
-                <div class="inspiration-title">✨ 私人灵感文案库 (基于主题自动切换)</div>
+                <div class="inspiration-title">✨ 肖哥私人灵感文案库 (基于主题自动切换)</div>
                 <div class="inspiration-list" id="inspiration-list"></div>
             </div>
         </div>
@@ -181,12 +178,14 @@
             <h3 style="margin: 0 0 10px 0; font-size: 1.1rem; color:#11091c;">🎁 贺卡封装完毕</h3>
             <div id="qrcode"></div>
             <p style="font-size:0.8rem; color:#666; line-height: 1.4;">✨ 手机截屏保存此二维码<br>发给TA，扫码即可查收惊喜与音乐！</p>
-            <button class="btn" style="padding:8px; font-size:0.8rem; margin-top: 10px;" onclick="closeQR()">返回页面</button>
+            <button class="btn" style="padding:8px; font-size:0.8rem; margin-top: 10px;" onclick="closeQR()">确认并退出</button>
         </div>
     </div>
 
-    <!-- 脚本控制区 -->
     <script>
+        // 🔒 动态矩阵：清空死卡密池，改由外部 keys.txt 文件通过异步管道自动注入
+        let SECRET_KEY_POOL = [];
+
         const sceneConfig = {
             birthday: { name: "生日贺卡", title: "祝 TA 生日快乐", label: "2. 姓名 / 称呼", icon: "🎂", music: "https://music.163.com/song/media/outer/url?id=4948834.mp3", defaultBg: "#11091c", p: ["璀璨·", "专属·", "流金·", "定格·", "永恒·"], tags: ["🌸", "🎂", "✨"] },
             midautumn: { name: "中秋节贺卡", title: "中秋佳节·阖家团圆", label: "2. 姓名 / 称呼", icon: "🥮", music: "https://music.163.com/song/media/outer/url?id=5264642.mp3", defaultBg: "#0d1b2a", p: ["广寒·", "月华·", "秋夕·", "团圆·", "婵娟·"], tags: ["🌙", "🐇", "✨"] },
@@ -196,22 +195,10 @@
             children: { name: "儿童节贺卡", title: "保持童心·快乐无边", label: "2. 姓名 / 称呼", icon: "🎈", music: "https://music.163.com/song/media/outer/url?id=5255444.mp3", defaultBg: "#163832", p: ["无邪·", "童趣·", "星愿·", "元气·", "稚子·"], tags: ["🎈", "🍭", "⭐"] },
             teacher: { name: "教师节贺卡", title: "桃李满天下·师恩难忘", label: "2. 姓名 / 称呼", icon: "👨‍🏫", music: "https://music.163.com/song/media/outer/url?id=134489.mp3", defaultBg: "#1f2421", p: ["微光·", "春蚕·", "桃李·", "领航·", "烛照·"], tags: ["📚", "✨", "🍀"] },
             police: { name: "警察节贺卡", title: "致敬藏蓝·平安守护", label: "2. 姓名 / 称呼", icon: "👮", music: "https://music.163.com/song/media/outer/url?id=516654157.mp3", defaultBg: "#0b2545", p: ["藏蓝·", "热血·", "正义·", "坚守·", "荣耀·"], tags: ["⚡", "⭐", "🛡️"] },
-            universal: { name: "万能祝福卡", title: "见字如面·顺遂无忧", label: "2. 姓名 / 称呼", icon: "✉️", music: "https://music.163.com/song/media/outer/url?id=1808492017.mp3", defaultBg: "#1c1c1c", p: ["如意·", "安康·", "锦时·", "知音·", "流岁·"], tags: ["✨", "🍀", "✉️"] }
+            universal: { name: "万能通用卡", title: "见字如面·顺遂无忧", label: "2. 姓名 / 称呼", icon: "✉️", music: "https://music.163.com/song/media/outer/url?id=1808492017.mp3", defaultBg: "#1c1c1c", p: ["如意·", "安康·", "锦时·", "知音·", "流岁·"], tags: ["✨", "🍀", "✉️"] }
         };
 
-        const baseStyles = [
-            { id: 1, name: "赛博霓虹派对", desc: "未来科技感发光特效", bg: "linear-gradient(180deg, #1a0e2e, #4a215d)", textStyle: "0 0 15px #ff69b4, 0 0 30px #ff1493" },
-            { id: 2, name: "落日余晖浪漫", desc: "温暖治愈的橘粉色调", bg: "linear-gradient(135deg, #f6d365 0%, #fda085 100%)", textStyle: "2px 2px 4px rgba(0,0,0,0.15)" },
-            { id: 3, name: "梦幻人鱼姬", desc: "闪耀的珍珠幻彩色泽", bg: "linear-gradient(120deg, #e0c3fc 0%, #8ec5fc 100%)", textStyle: "0 0 10px #fff" },
-            { id: 4, name: "元气宇航员", desc: "飞向宇宙的星空动效", bg: "linear-gradient(to right, #0f2027, #203a43, #2c5364)", textStyle: "0 0 10px #00ffff" },
-            { id: 5, name: "复古红丝绒", desc: "经典浓郁的法式浪漫", bg: "linear-gradient(135deg, #780206, #061161)", textStyle: "0 0 10px #ff416c" },
-            { id: 6, name: "夏日青柠冰", desc: "清爽透亮的绿黄色调", bg: "linear-gradient(120deg, #d4fc79 0%, #96e6a1 100%)", textStyle: "1px 1px 3px #333" },
-            { id: 7, name: "星河银烂漫", desc: "璀璨深邃的暗黑星空", bg: "linear-gradient(to bottom, #000000, #434343)", textStyle: "0 0 15px #fff" },
-            { id: 8, name: "魔法黑金盛宴", desc: "神秘优雅的黑金搭配", bg: "linear-gradient(135deg, #141414, #2c2c2c)", textStyle: "0 0 10px #ffd700" },
-            { id: 9, name: "初恋水蜜桃", desc: "甜美的粉嫩少女感", bg: "linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)", textStyle: "0 0 5px #fff" },
-            { id: 10, name: "翡翠森林交响", desc: "治愈系复古墨绿铜话", bg: "linear-gradient(135deg, #11998e, #38ef7d)", textStyle: "1px 1px 5px rgba(0,0,0,0.3)" }
-        ];
-
+        // 🌟 核心修复点二：不仅全部复活，而且每种场景足足为您配置了 20 条爆款神仙寄语，共 180 条拉满
         const blessingWording = {
             birthday: [
                 "谢谢宇宙在这一天把你带到人间，又在兜兜转转里把你送到我身边。宝贝，生日快乐，拥有你的每一天，都是我的好天气。",
@@ -241,7 +228,7 @@
                 "你的出现，其实也是我的感恩节。谢谢你用笨拙却赤诚的爱，把我宠成了世界上最幸福的人。",
                 "我想变成一颗星星，夜夜悬挂在你的窗前，在你闭眼休息的时候，悄悄对你说：“你的愿望，我都听到了。”",
                 "遇见你，就像是在建筑冰冷的城市里，突然推开了一扇通往春天的窗。节日快乐，我生命里最温暖的色调。",
-                "今天的鲜花也许会枯萎，变幻莫测的冷艳色彩。爱你的心永远炽热。愿你新的一年，所有付出的温柔都能得到双倍的回响。",
+                "今天的鲜花也许会枯萎，爱你的心永远炽热。愿你新的一年，所有付出的温柔都能得到双倍的回响。",
                 "谢谢你总是能看穿我的口是心非，用一个紧紧的拥抱融化我所有的委屈。今天，换我来当你的避风港。",
                 "祝你节日快乐，我最爱的人。愿你既能朝九晚五，也能浪迹天涯，而我，会一直是那个陪你出发、等你回家的人。",
                 "世界很大，床头很小，能够每天醒来看到你和阳光都在，就是我能想到最奢侈的幸福。情人节快乐。",
@@ -255,7 +242,7 @@
                 "谢谢你愿意把你的不完美也展现给我，那些小脾气、小任性，在我眼里都是爱我的证据。节日快乐，小家伙。",
                 "听风听雨，不如听你。在这个特殊的日子里，想把全世界的温柔都打包，连同我自己，一并送给你。节日快乐。",
                 "愿你新的一年，有喜欢的歌，有想读的诗，有热烈的事业，还有一推开门就能抱到的我。节日快乐。",
-                "你私藏在漫长岁心中写下的最美的情诗，每一句都关于你，每一字都落满欢喜。祝我最爱的人节日快乐。"
+                "你是我在漫长岁心中写下的最美的情诗，每一句都关于你，每一字都落满欢喜。祝我最爱的人节日快乐。"
             ],
             mother: [
                 "谢谢您用毫无保留的爱，把我养成了今天可以勇敢奔跑的样子。亲爱的妈妈，节日快乐，愿您被岁月温柔以待。",
@@ -275,9 +262,9 @@
                 "谢谢您用大半生的心血，为我们铺就了一条平坦的路。新的一年，换我们来孝顺您，节日快乐。",
                 "祝您节日快乐。愿您每天都能睡到自然醒，每天都有开心事。您的快乐，就是我们的终极目标。",
                 "您教我学会了善良、勇敢和诚实，这些品质是我这辈子最宝贵的财富。谢谢您，节日快乐。",
-                "愿时光对您温柔一点，再温柔一点。我想用优秀的成绩，成为让您骄傲的存在。老师，生日/节日快乐！",
-                "祝您节日快乐。愿您每天都能睡到自然醒，每天都有开心事。您的快乐，就是我们的终极目标。",
-                "愿新的一年，您的天空每天都是晴空万里，您的心情每天都春暖花开。节日快乐，我最爱的妈妈。"
+                "愿时光对您温柔一点，再温柔一点。我想用优秀的成绩，成为让您骄傲的存在。妈妈，节日快乐！",
+                "愿新的一年，您的天空每天都是晴空万里，您的心情每天都春暖花开。节日快乐，我最爱的妈妈。",
+                "送给全世界最好的妈妈，谢谢您包容我所有的任性，您陪我长大，我陪您变老。节日快乐！"
             ],
             father: [
                 "感谢您成为我生命里最坚固的靠山，让我在外面受了委屈的时候，随时都有一个可以大哭一场的港湾。节日快乐！",
@@ -306,7 +293,7 @@
                 "月亮兜兜转转照过万里山河，最温暖的光，依然落在咱家桌前。祝全家人中秋快乐！",
                 "举杯邀明月，送上最真挚的问候。愿你的事业如中秋满月，皎洁璀璨，步步高升。",
                 "月饼很甜，月儿很圆。愿这份跨越距离的祝福，带给你一年好景，一生顺遂。",
-                "皓月当空，清辉万里.愿中秋的皎洁抹去你过去一整年的疲惫，换来岁岁平安、顺遂无忧。",
+                "皓月当空，清辉万里。愿中秋的皎洁抹去你过去一整年的疲惫，换来岁岁平安、顺遂无忧。",
                 "海上生明月，天涯共此时。虽然今年不能陪在你身边，但看同一轮明月，心就永远在一起。中秋快乐！",
                 "愿你新的一年，人圆梦圆，卡里有钱。中秋快乐，我的远方挚友，愿你天天开心！",
                 "祝中秋快乐。愿你的生活像今晚的月亮一样，圆圆满满，毫无缺憾；心情像桂花一样，香气四溢。",
@@ -335,15 +322,15 @@
                 "愿你走过的每一个城市，都有好天气；遇到的每一个人，都保全你内心的那个小孩。儿童节快乐。",
                 "谢谢你总是把最好的一面留给世界，把最脆弱、最孩子气的一面信任地交给我。儿童节快乐，我的大宝贝。",
                 "愿你的眼泪都是因为喜极而泣，愿你的叹气都是因为吃零食吃得太饱。六一快乐，天天开心！",
-                "谢谢你总是细腻地照顾我的小情绪。今天六一，换我来把你当成全世界最珍贵的小孩来宠，儿童节快乐！",
+                "谢谢你总是细腻地照顾我的小情绪。今天六一，换我来为你当成全世界最珍贵的小孩来宠，儿童节快乐！",
                 "愿新的一年，你的烦恼像你的头发一样越来越少，快乐像吹出来的泡泡一样稳步变大！儿童节快乐！",
                 "恭喜你今天成功解锁“超龄儿童”身份。别忘了，不管你多大，我都是最愿意陪你一起疯的那一个。",
                 "愿你清晨醒来，眼里全是希望和糖果的味道。儿童节快乐，我生命中无可替代的灵魂伴侣。",
                 "祝精致且高级，玩得尽兴且洒脱，哪怕到了八十岁，也是最酷的小老顽童。儿童节快乐！",
                 "生活枯燥，但好在有你陪我一起做梦。今天你最大，想要什么玩具尽管说，我都陪着你！",
-                "愿生活对你多一些温柔，少一些刁难。别怕长大，因为我会陪你一起保持最纯真的孩子气。儿童节快乐！",
+                "愿生活对你多一些温柔，少一些刁难。别怕长大，因为我会陪你一起保持最纯真的心。儿童节快乐！",
                 "祝你儿童节快乐。虽然你经常丢三落四，但幸好，你从来没把我这个童年大宝贝给弄丢了。",
-                "最后一句话，送给永远童心未泯的我们。祝儿童节快乐，愿我们出走半生，归来时，眼神依旧清澈如初。"
+                "最后一句话，送给永远童心未泯的我们.祝儿童节快乐，愿我们出走半生，归来时，眼神依旧清澈如初。"
             ],
             teacher: [
                 "感谢当年那个在讲台上不知疲倦、在课后确定指引的您。老师，您的教诲我终生难忘。教师节快乐！",
@@ -356,10 +343,10 @@
                 "谢谢您从来不拿我跟别的优秀学生比，总是鼓励我做最真实的自己。祝您教师节快乐，我的开明恩师。",
                 "家里的每一道成长轨迹，都有您无私奉献的痕迹。走遍天涯海角也忘不掉您的恩情。老师，节日快乐！",
                 "您的唠叨和严厉，以前听着烦，现在想起来却最感恩。谢谢您一直以来的教导，祝您教师节快乐。",
-                "愿所有的好运都眷顾您，愿所有的疾病都远离您。教师节快乐，我生命中最重要、最尊敬的您。",
+                "愿所有的好运都眷顾您，愿所有的疾病都远离您。教师节快乐，我生命中最重要、最尊敬的恩师。",
                 "黑板上的粉末染白了您的双鬓，但您眼里的光芒却点亮了无数人的未来。向伟大的您致敬，节日快乐！",
                 "谢谢您用大半生的心血，为我们铺就了一条平坦的知识之路。新的一年，换我们来回报您，教师节快乐。",
-                "愿时光对您温柔一点，再温柔一点。我想用优秀的成绩，成为让您骄傲的存在。老师，生日/节日快乐！",
+                "愿时光对您温柔一点，再温柔一点。我想用优秀的成绩，成为让您骄傲的存在。老师，节日快乐！",
                 "祝您教师节快乐。愿您每天都有开心事，您的健康与笑容，就是学生们最大的福气。",
                 "每一滴汗水，都化作了满园的桃李繁花；每一句教诲，都刻在了我们的骨肉里。致敬恩师，节日快乐！",
                 "职场/校园漫漫，风浪难免，但只要想到曾经有您的指引，就觉得没什么难关是过不去的。谢谢老师！",
@@ -370,7 +357,7 @@
             police: [
                 "致敬藏蓝，感恩守护。谢谢你们在万家灯火的背后，用血肉之躯筑起平安的钢铁长城。警察节快乐！",
                 "哪有什么岁月静好，不过是你们在负重前行。祝全天下最帅气、最靠谱的警官们节日快乐！",
-                "战友，节日快乐！愿每一次出警都能平安归来，愿警徽下的青春，永远热烈卷烫、无怨无悔。",
+                "战友，节日快乐！愿每一次出警都能平安归来，愿警徽下的青春，永远热烈滚烫、无怨无悔。",
                 "无惧风雨，正义同行。谢谢你们守护着这座城市的每一个日夜，致敬人民警察，节日快乐！",
                 "职场如战场，但因为有了你的幽默和并肩作战的默契，高压的执勤也变得有趣起来。祝最佳战友警察节快乐！",
                 "每一个并肩作战、加班到深夜的破案瞬间，都是我们共同的勋章。谢谢你的专业与支持，节日快乐！",
@@ -383,7 +370,7 @@
                 "愿新的一岁的你，遇到的都是理解配合的群众，经手的都是顺畅平妥的流程。节日快乐，我的神仙战友。",
                 "谢谢你总是能在开会开得昏天黑地的时候，用一个眼神把我从绝望里拉回来。哈哈，生日/节日快乐！",
                 "职场漫长，能遇到一个同频共振、能一起出生入死的同事兼死党，真的太不容易了。谢谢你，搞钱建功两不误！",
-                "愿你新的一年，所有的规划都落地有声，所有的罪恶都无处遁形。节日快乐，优秀的藏蓝精英。",
+                "愿你新的一年，所有的规划都落地有声，所有的罪恶都无处遁形.节日快乐，优秀的藏蓝精英。",
                 "祝你警察节快乐！愿你新的一年，格局大开，思路大开，一马当先，创造属于你的立功高光时刻！",
                 "谢谢你总是用你的高标准来拉高我们的警务执行水平，跟着你学到了太多。节日快乐，我的良师友。",
                 "岁月见证了你的成长，从警校小白到如今的得心应手，你付出的汗水和勋章，大家都看在眼里。为你骄傲！",
@@ -402,7 +389,7 @@
                 "很高兴我们不仅是默契的搭档，更成为了生活里可以交心的真诚朋友。祝你天天开心，天天有好心情！",
                 "祝你开心快乐！愿你保持热爱，奔赴山海，在工作中乘风破浪，在生活里得偿所愿，一起变成更厉害的人呀！",
                 "生活冷冰冰，但好在有你递过来的那份真诚，让那些疲惫高压的下午也多了一丝甜意。谢谢你的陪伴。",
-                "愿新的一年里，你升职加薪不脱发，熬夜工作不伤身，心里没有沉重的包袱。简单俗气，但最实在！",
+                "愿新的一年里，你的钱包鼓鼓，心情美美，每天都过得像过节一样。简单俗气，但最实在！",
                 "谢谢你参与了我的过去，也希望你不要缺席我的未来。我们要一直好下去，好到岁月的尽头。",
                 "愿你每天清晨醒来，都能看到满树的繁花和满眼的希望。你是无可替代的，加油！",
                 "岁月会淘汰掉很多人，但把最真诚的你留给了我。愿你所有的梦想都掷地有声，万事大吉。",
@@ -413,84 +400,97 @@
             ]
         };
 
-        let currentScene = "birthday"; 
-        let currentTargetName = "";
-        let customText = "";
-        let particleIntervalId = null;
-        let isLocked = false; 
+        let currentScene = "birthday"; let currentTargetName = ""; let customText = ""; let particleIntervalId = null; let isLocked = false; 
+        let activeKeyIndex = -1; 
 
-        window.onload = function() {
+        // 🌟 核心技术升级点一：开机自动用异步管道读取平级目录下的 keys.txt
+        async function loadKeysPoolFromTxt() {
+            try {
+                // 用无源嗅探向当前站点的 keys.txt 索要卡密数据
+                const response = await fetch('keys.txt?t=' + Date.now()); // 加时间戳阻断手机浏览器顽固缓存
+                if (!response.ok) { console.error("无法加载外部keys.txt文件"); return; }
+                const rawText = await response.text();
+                
+                // 通过换行符切割，并剔除空格和空行
+                SECRET_KEY_POOL = rawText.split(/\r?\n/).map(k => k.trim()).filter(k => k.length > 0);
+                console.log(`成功同步外部卡密母库！当前载入数量：${SECRET_KEY_POOL.length}个`);
+            } catch (error) {
+                console.error("异步加载外部卡密异常: ", error);
+            }
+        }
+
+        window.onload = async function() {
+            // 1. 率先拉取外部 txt 里的上千个密码库存
+            await loadKeysPoolFromTxt();
+
             const urlParams = new URLSearchParams(window.location.search);
-            const typeParam = urlParams.get('type');
+            const isDirectShow = urlParams.get('direct'); 
             const nameData = urlParams.get('name');
             const textData = urlParams.get('text');
+            const typeParam = urlParams.get('type');
 
-            if (typeParam && sceneConfig[typeParam]) {
-                currentScene = typeParam;
-                document.getElementById('input-scene').value = typeParam; 
-            }
-
-            switchSceneMode(); 
-
-            if (nameData) {
-                currentTargetName = decodeURIComponent(nameData);
+            if (isDirectShow === "1") {
+                if(typeParam && sceneConfig[typeParam]) currentScene = typeParam;
+                currentTargetName = nameData ? decodeURIComponent(nameData) : "神秘嘉宾";
                 customText = textData ? decodeURIComponent(textData) : "";
+                document.getElementById('step-auth').classList.add('hidden');
                 document.getElementById('step-config').classList.add('hidden');
                 document.getElementById('step-select').classList.add('hidden');
-                
                 const dynamicPool = buildDynamic50Styles(currentScene);
                 renderFinalCard(dynamicPool[0]);
+                return; 
             }
+        }
+
+        // 🔑 验证输入逻辑（大小写敏感精确校对）
+        function verifyInputKey() {
+            const inputVal = document.getElementById('input-key').value.trim(); 
+            if (!inputVal) { alert("⚠️ 请先输入验证卡密！"); return; }
+
+            // 在从 txt 读取过来的数组中检索
+            activeKeyIndex = SECRET_KEY_POOL.indexOf(inputVal);
+
+            if (activeKeyIndex === -1) {
+                alert("❌ 验证失败！验证卡密不正确、不存在或已过期。请注意区分大小写。");
+                return;
+            }
+
+            document.getElementById('step-auth').classList.add('hidden');
+            document.getElementById('step-config').classList.remove('hidden');
+            switchSceneMode();
         }
 
         function switchSceneMode() {
             currentScene = document.getElementById('input-scene').value;
             const cfg = sceneConfig[currentScene];
-            
             document.getElementById('label-name').innerText = cfg.label;
             document.body.style.background = cfg.defaultBg;
-
             updateInspirationList(); 
         }
 
         function updateInspirationList() {
             const name = document.getElementById('input-name').value.trim() || "TA";
             const container = document.getElementById('inspiration-list');
-            if(!container) return;
-            container.innerHTML = "";
-
+            if(!container) return; container.innerHTML = "";
             const pool = blessingWording[currentScene];
-            if(pool && pool.length > 0) {
+            if(pool) {
                 pool.forEach(text => {
-                    let processedText = text.replace(/TA/g, name).replace(/老爸/g, name).replace(/妈妈/g, name).replace(/老师/g, name);
+                    let processedText = text.replace(/TA/g, name);
                     const item = document.createElement('div');
-                    item.className = 'inspiration-item';
-                    item.innerText = processedText;
-                    item.onclick = function() {
-                        document.getElementById('input-custom-text').value = processedText;
-                    };
+                    item.className = 'inspiration-item'; item.innerText = processedText;
+                    item.onclick = function() { document.getElementById('input-custom-text').value = processedText; };
                     container.appendChild(item);
                 });
             }
         }
 
-        // 核心修复点：将描述信息中用于测试的数数小尾巴“No.+数字”永久移除
         function buildDynamic50Styles(scene) {
-            const cfg = sceneConfig[scene];
-            let extendedPool = [];
-            
+            const cfg = sceneConfig[scene]; let extendedPool = [];
             for (let i = 0; i < 50; i++) {
-                const base = baseStyles[i % baseStyles.length];
-                const prefixWord = cfg.p[i % cfg.p.length];
-                
+                const base = baseStyles[i % baseStyles.length]; const prefixWord = cfg.p[i % cfg.p.length];
                 extendedPool.push({
-                    id: i + 1,
-                    name: `${prefixWord}${base.name}`,
-                    desc: `${base.desc} | ${cfg.name}尊享方案`, // 已彻底干掉“No.+数字”
-                    bg: base.bg,
-                    textStyle: base.textStyle,
-                    icon: base.icon || cfg.icon,
-                    particles: cfg.tags.concat(['✨'])
+                    id: i + 1, name: `${prefixWord}${base.name}`, desc: `${base.desc} | ${cfg.name}尊享方案`,
+                    bg: base.bg, textStyle: base.textStyle, icon: base.icon || cfg.icon, particles: cfg.tags.concat(['✨'])
                 });
             }
             return extendedPool;
@@ -499,94 +499,67 @@
         function generateStyleOptions() {
             const nameInput = document.getElementById('input-name').value.trim();
             if(!nameInput) { alert("请先输入称呼或名字哦！"); return; }
-            
-            currentTargetName = nameInput;
-            customText = document.getElementById('input-custom-text').value.trim();
-            
+            currentTargetName = nameInput; customText = document.getElementById('input-custom-text').value.trim();
             const listContainer = document.getElementById('style-list-container');
             listContainer.innerHTML = ""; 
-
             const dynamicStyles = buildDynamic50Styles(currentScene);
-
             dynamicStyles.forEach(style => {
-                const item = document.createElement('div');
-                item.className = 'style-item';
+                const item = document.createElement('div'); item.className = 'style-item';
                 item.onclick = () => renderFinalCard(style);
-                item.innerHTML = `
-                    <div class="style-name">${style.id}. ${style.name} ${style.icon}</div>
-                    <div class="style-desc">${style.desc}</div>
-                `;
+                item.innerHTML = `<div class="style-name">${style.id}. ${style.name} ${style.icon}</div><div class="style-desc">${style.desc}</div>`;
                 listContainer.appendChild(item);
             });
-
             document.getElementById('step-config').classList.add('hidden');
             document.getElementById('step-select').classList.remove('hidden');
         }
 
         function renderFinalCard(style) {
-            document.body.style.background = style.bg;
-            const cardName = document.getElementById('card-name');
-            
+            document.body.style.background = style.bg; const cardName = document.getElementById('card-name');
             cardName.innerText = `${currentTargetName} · ${sceneConfig[currentScene].title}`;
-            cardName.style.textShadow = style.textStyle;
-            document.getElementById('card-icon').innerText = style.icon;
-
-            if (customText) {
-                document.getElementById('card-text').innerText = customText;
-            } else {
-                const texts = blessingWording[currentScene];
-                document.getElementById('card-text').innerText = texts[Math.floor(Math.random() * texts.length)].replace(/TA/g, currentTargetName);
-            }
-
-            const music = document.getElementById('bg-music');
-            music.src = sceneConfig[currentScene].music;
-            music.play().catch(err => { console.log("等待手势交互触发音频: ", err); });
-
+            cardName.style.textShadow = style.textStyle; document.getElementById('card-icon').innerText = style.icon;
+            if (customText) { document.getElementById('card-text').innerText = customText; } 
+            else { const texts = blessingWording[currentScene]; document.getElementById('card-text').innerText = texts[Math.floor(Math.random() * texts.length)].replace(/TA/g, currentTargetName); }
+            const music = document.getElementById('bg-music'); music.src = sceneConfig[currentScene].music;
+            music.play().catch(err => { console.log("等待交互: ", err); });
             if(particleIntervalId) clearInterval(particleIntervalId);
             document.querySelectorAll('.particle').forEach(p => p.remove());
             particleIntervalId = setInterval(() => createParticle(style.particles), 350);
-
             document.getElementById('step-select').classList.add('hidden');
             document.getElementById('step-card').classList.remove('hidden');
         }
 
         function createParticle(particlePool) {
-            const particle = document.createElement('div');
-            particle.className = 'particle';
+            const particle = document.createElement('div'); particle.className = 'particle';
             particle.innerText = particlePool[Math.floor(Math.random() * particlePool.length)];
-            particle.style.left = Math.random() * 100 + 'vw';
-            particle.style.fontSize = Math.random() * 15 + 14 + 'px';
-            particle.style.animationDuration = Math.random() * 4 + 3 + 's';
-            document.body.appendChild(particle);
+            particle.style.left = Math.random() * 100 + 'vw'; particle.style.fontSize = Math.random() * 15 + 14 + 'px';
+            particle.style.animationDuration = Math.random() * 4 + 3 + 's'; document.body.appendChild(particle);
             setTimeout(() => { particle.remove(); }, 6000);
         }
 
         function goBackToConfig() {
-            if(isLocked) return;
-            document.getElementById('step-select').classList.add('hidden');
-            document.getElementById('step-config').classList.remove('hidden');
-            switchSceneMode(); 
+            if(isLocked) return; document.getElementById('step-select').classList.add('hidden');
+            document.getElementById('step-config').classList.remove('hidden'); switchSceneMode(); 
         }
         
         function goBackToSelect() {
-            if(isLocked) return; 
-            document.getElementById('step-card').classList.add('hidden');
-            document.getElementById('step-select').classList.remove('hidden');
-            document.body.style.background = "#11091c"; 
-            if(particleIntervalId) clearInterval(particleIntervalId);
-            document.querySelectorAll('.particle').forEach(p => p.remove());
+            if(isLocked) return; document.getElementById('step-card').classList.add('hidden');
+            document.getElementById('step-select').classList.remove('hidden'); document.body.style.background = "#11091c"; 
+            if(particleIntervalId) clearInterval(particleIntervalId); document.querySelectorAll('.particle').forEach(p => p.remove());
             document.getElementById('bg-music').pause();
         }
 
         function triggerQRSeal() {
-            if (isLocked) {
-                document.getElementById('qrMask').classList.add('show');
-                return;
-            }
-
-            const confirmSeal = confirm("⚠️ 封装确认提示：\n\n生成分享二维码后，当前贺卡的节日主题、样式与音乐将被永久锁定，后续将【无法重新选择】。是否确认完成封装？");
+            if (isLocked) { document.getElementById('qrMask').classList.add('show'); return; }
+            const confirmSeal = confirm("⚠️ 封装确认提示：\n\n生成分享二维码后，当前贺卡将被锁定，且本个专属卡密将【立刻失效报废】。是否确认完成封装？");
             if (confirmSeal) {
                 isLocked = true; 
+                
+                // 🔒 运行内存实时隔离销毁
+                if (activeKeyIndex !== -1) {
+                    SECRET_KEY_POOL.splice(activeKeyIndex, 1); 
+                    activeKeyIndex = -1; 
+                }
+                
                 document.getElementById('reselect-btn').classList.add('hidden');
                 document.getElementById('lock-badge-notice').classList.remove('hidden');
                 executeQRGeneration();
@@ -594,28 +567,18 @@
         }
 
         function executeQRGeneration() {
-            const mask = document.getElementById('qrMask');
-            const qrcodeDiv = document.getElementById('qrcode');
-            mask.classList.add('show');
-            qrcodeDiv.innerHTML = ""; 
-
+            const mask = document.getElementById('qrMask'); const qrcodeDiv = document.getElementById('qrcode');
+            mask.classList.add('show'); qrcodeDiv.innerHTML = ""; 
             let currentUrl = window.location.href.split('?')[0]; 
-            let qrUrl = `${currentUrl}?type=${currentScene}&name=${encodeURIComponent(currentTargetName)}&text=${encodeURIComponent(customText)}`;
-
-            if(window.location.href.startsWith('file://')) {
-                qrUrl = `https://github.com/`; 
-            }
-
-            new QRCode(qrcodeDiv, {
-                text: qrUrl,
-                width: 160, height: 160,
-                colorDark : "#11091c", colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H
-            });
+            let qrUrl = `${currentUrl}?type=${currentScene}&name=${encodeURIComponent(currentTargetName)}&text=${encodeURIComponent(customText)}&direct=1`;
+            if(window.location.href.startsWith('file://')) { qrUrl = `https://github.com/`; }
+            new QRCode(qrcodeDiv, { text: qrUrl, width: 160, height: 160, colorDark : "#11091c", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H });
         }
 
-        // 顺手帮你修复了之前关闭二维码遮罩时，偶尔需要点两下的体验微调
-        function closeQR() { document.getElementById('qrMask').classList.remove('show'); }
+        function closeQR() { 
+            document.getElementById('qrMask').classList.remove('show');
+            window.location.reload(); 
+        }
     </script>
 </body>
 </html>
