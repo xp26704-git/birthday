@@ -297,5 +297,32 @@
             document.getElementById('qrMask').classList.remove('show'); 
         }
     </script>
+// ====== 这一段是全新升级的自动识别并跳转逻辑 ======
+window.onload = function() {
+    // 1. 自动从网址抓取参数
+    const urlParams = new URLSearchParams(window.location.search);
+    const nameData = urlParams.get('name');
+    const relationData = urlParams.get('relation') || 'friend'; // 如果没传关系，默认给挚友
+    const textData = urlParams.get('text');
+
+    // 2. 核心判断：只要网址里填了“name（姓名）”，就说明是买家定制生成的链接！
+    if (nameData) {
+        // 强行把全局变量塞满
+        currentTargetName = decodeURIComponent(nameData);
+        currentRelation = relationData;
+        customText = textData ? decodeURIComponent(textData) : "";
+
+        // 根据关系，随便先挑选 20 种样式里的第 1 种（赛博霓虹派对）直接渲染展示！
+        const defaultStyle = styleTemplates[0]; 
+        
+        // 抹去第一步和第二步的输入框，直接亮出最终的大招（贺卡）
+        document.getElementById('step-config').classList.add('hidden');
+        document.getElementById('step-select').classList.add('hidden');
+        
+        // 调用渲染函数，直接放音乐、飘爱心
+        renderFinalCard(defaultStyle);
+    }
+}
+// ================================================
 </body>
 </html>
