@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>专属生日贺卡高级定制系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <style>
+        * { box-sizing: border-box; transition: all 0.3s ease; }
+        body {
+            margin: 0; padding: 0;
+            background: #11091c;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; overflow-x: hidden; color: #fff;
+        }
+
+        /* 统一卡片样式 */
+        .box {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            border-radius: 24px;
+            padding: 30px 20px;
+            width: 90%; max-width: 420px;
+            text-align: center; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            z-index: 10;
+        }
+
+        /* 第一阶段：输入表单界面 */
+        .form-group { text-align: left; margin-bottom: 15px; }
+        label { display: block; font-size: 0.9rem; color: #d1c4e9; margin-bottom: 6px; font-weight: bold; }
+        input, select, textarea {
+            width: 100%; padding: 12px; border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3);
+            color: #fff; font-size: 1rem; outline: none; font-family: inherit;
+        }
+        input:focus, select:focus, textarea:focus { border-color: #ff69b4; box-shadow: 0 0 10px rgba(255,105,180,0.5); }
+        textarea { resize: none; height: 80px; font-size: 0.9rem; }
+
+        /* 第二阶段：样式选择列表 */
+        .style-list {
+            max-height: 300px; overflow-y: auto; margin: 15px 0; padding-right: 5px; text-align: left;
+        }
+        .style-list::-webkit-scrollbar { width: 5px; }
+        .style-list::-webkit-scrollbar-thumb { background: #ff69b4; border-radius: 10px; }
+        
+        .style-item {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px; padding: 12px 15px; margin-bottom: 10px; cursor: pointer;
+        }
+        .style-item:hover { background: rgba(255,105,180,0.15); border-color: #ff69b4; transform: scale(1.02); }
+        .style-name { font-weight: bold; color: #ff8da1; font-size: 1rem; margin-bottom: 3px; }
+        .style-desc { font-size: 0.8rem; color: #e0e0e0; line-height: 1.4; }
+
+        /* 第三阶段：最终贺卡效果 */
+        .cake-icon { font-size: 5rem; margin-bottom: 10px; display: inline-block; }
+        .wobble { animation: wobbleAnim 2.5s ease-in-out infinite; }
+        @keyframes wobbleAnim {
+            0%, 100% { transform: rotate(-5deg) scale(1); }
+            50% { transform: rotate(5deg) scale(1.05); }
+        }
+        h1 { font-size: 2.2rem; margin: 10px 0; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        .blessing { font-size: 1.1rem; line-height: 1.8; margin: 20px 0; padding: 15px; border-radius: 12px; text-align: left; word-break: break-all; }
+
+        /* 按钮与公共样式 */
+        .btn {
+            background: linear-gradient(45deg, #ff416c, #ff4b2b); color: white; border: none;
+            padding: 12px 28px; border-radius: 50px; font-size: 1rem; font-weight: bold;
+            cursor: pointer; box-shadow: 0 5px 15px rgba(255, 65, 108, 0.4); width: 100%;
+        }
+        .btn:active { transform: scale(0.95); }
+        .hidden { display: none !important; }
+
+        /* 二维码弹窗层 - 提高了 z-index 确保 100% 挡在最前面 */
+        .qr-mask {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85);
+            display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none;
+        }
+        .qr-mask.show { opacity: 1; pointer-events: auto; }
+        .qr-box { background: #fff; padding: 25px; border-radius: 20px; text-align: center; color: #333; width: 280px; }
+        #qrcode { margin: 15px auto; display: flex; justify-content: center; padding: 5px; background: #fff; }
+
+        /* 飘落粒子 */
+        .particle { position: fixed; top: -10px; pointer-events: none; animation: fall linear infinite; z-index: 1; }
+        @keyframes fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(105vh) rotate(360deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="bg-music" loop src="https://music.163.com/song/media/outer/url?id=4948834.mp3"></audio>
+
+    <div id="step-config" class="box">
+        <h2 style="margin-top:0; color:#ff69b4;">💝 贺卡高级定制中心</h2>
+        <div class="form-group">
+            <label>寿星姓名 / 称呼</label>
+            <input type="text" id="input-name" placeholder="例如：宝贝、老妈、张三">
+        </div>
+        <div class="form-group">
+            <label>你们之间的关系</label>
+            <select id="input-relation">
+                <option value="lover">恋人 (情侣/爱人)</option>
+                <option value="friend">挚友 (闺蜜/兄弟)</option>
+                <option value="classmate">同学 (同窗好友)</option>
+                <option value="colleague">同事 (职场伙伴)</option>
+                <option value="family">长辈 (父母/亲人)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>专属祝福寄语 (选填，留空则智能生成)</label>
+            <textarea id="input-custom-text" placeholder="在这里写下你想对TA说的悄悄话吧..."></textarea>
+        </div>
+        <button class="btn" onclick="generateStyleOptions()">分析并生成20种样式方案</button>
+    </div>
+
+    <div id="step-select" class="box hidden">
+        <h3 style="margin-top:0; color:#ff69b4;">✨ 已为你量身定制20款样式</h3>
+        <p style="font-size:0.8rem; color:#aaa; margin-bottom:10px;">点击下方任意一款方案即可预览最终动效与音乐</p>
+        <div class="style-list" id="style-list-container"></div>
+        <button class="btn" style="background:#4a215d;" onclick="goBackToConfig()">返回修改信息</button>
+    </div>
+
+    <div id="step-card" class="box hidden">
+        <div class="cake-icon wobble" id="card-icon">🎂</div>
+        <h1 id="card-name">祝你生日快乐</h1>
+        <p class="blessing" id="card-text"></p>
+        <button class="btn" onclick="showQR()">生成分享二维码</button>
+        <button class="btn" style="background:rgba(255,255,255,0.15); color:#fff; margin-top:10px; box-shadow:none;" onclick="goBackToSelect()">重选样式与音乐</button>
+    </div>
+
+    <div class="qr-mask" id="qrMask" onclick="closeQR()">
+        <div class="qr-box" onclick="event.stopPropagation()">
+            <h3 style="margin: 0 0 10px 0; font-size: 1.1rem; color:#11091c;">🎁 贺卡封装完毕</h3>
+            <div id="qrcode"></div>
+            <p style="font-size:0.8rem; color:#666; line-height: 1.4;">✨ 手机截屏保存此二维码<br>发给寿星，扫码即可查收惊喜与音乐！</p>
+            <button class="btn" style="padding:8px; font-size:0.8rem; margin-top: 10px;" onclick="closeQR()">返回页面</button>
+        </div>
+    </div>
+
+    <script>
+        // 20种高级风格母版数据不变
+        const styleTemplates = [
+            { id: 1, name: "赛博霓虹派对", desc: "未来科技感发光特效，适合追求个性的年轻人", bg: "linear-gradient(180deg, #1a0e2e, #4a215d)", textStyle: "0 0 15px #ff69b4, 0 0 30px #ff1493", icon: "🔮", particles: ['✨', '⚡', '🎵'] },
+            { id: 2, name: "落日余晖浪漫", desc: "温暖治愈的橘粉色调，定格最温柔的瞬间", bg: "linear-gradient(135deg, #f6d365 0%, #fda085 100%)", textStyle: "2px 2px 4px rgba(0,0,0,0.15)", icon: "🌅", particles: ['🌸', '✨', '💛'] },
+            { id: 3, name: "梦幻人鱼姬", desc: "闪耀的珍珠幻彩色泽，少女心直接爆棚", bg: "linear-gradient(120deg, #e0c3fc 0%, #8ec5fc 100%)", textStyle: "0 0 10px #fff", icon: "🧜‍♀️", particles: ['✨', '🫧', '🌸'] },
+            { id: 4, name: "元气宇航员", desc: "飞向宇宙的星空动效，充满探索趣味与活力", bg: "linear-gradient(to right, #0f2027, #203a43, #2c5364)", textStyle: "0 0 10px #00ffff", icon: "👨‍🚀", particles: ['⭐', '🚀', '🪐'] },
+            { id: 5, name: "复古红丝绒", desc: "经典浓郁的法式浪漫，高级典雅显贵气", bg: "linear-gradient(135deg, #780206, #061161)", textStyle: "0 0 10px #ff416c", icon: "🌹", particles: ['❤️', '✨', '🍂'] },
+            { id: 6, name: "夏日青柠冰", desc: "清爽透亮的绿黄色调，带走炎热的夏日微风", bg: "linear-gradient(120deg, #d4fc79 0%, #96e6a1 100%)", textStyle: "1px 1px 3px #333", icon: "🍹", particles: ['🍃', '✨', '🍀'] },
+            { id: 7, name: "星河银烂漫", desc: "璀璨深邃的暗黑星空，繁星点点闪烁不停", bg: "linear-gradient(to bottom, #000000, #434343)", textStyle: "0 0 15px #fff", icon: "🌌", particles: ['⭐', '✨', '🌙'] },
+            { id: 8, name: "魔法黑金盛宴", desc: "神秘优雅的黑金搭配，低调中透着奢华品质", bg: "linear-gradient(135deg, #141414, #2c2c2c)", textStyle: "0 0 10px #ffd700", icon: "👑", particles: ['✨', '🪙', '⭐'] },
+            { id: 9, name: "初恋水蜜桃", desc: "极其甜美的粉嫩少女感，适合空气中拉满甜度", bg: "linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)", textStyle: "0 0 5px #fff", icon: "🍑", particles: ['🌸', '❤️', '✨'] },
+            { id: 10, name: "翡翠森林交响", desc: "治愈系复古墨绿，宛如置身童话森林般惬意", bg: "linear-gradient(135deg, #11998e, #38ef7d)", textStyle: "1px 1px 5px rgba(0,0,0,0.3)", icon: "🌲", particles: ['🍃', '✨', '🎈'] },
+            { id: 11, name: "香槟气泡酒", desc: "微醺的流金岁月风格，自带成熟的高级优雅", bg: "linear-gradient(135deg, #C33764, #1D2671)", textStyle: "0 0 10px #ff007f", icon: "🥂", particles: ['✨', '🫧', '💛'] },
+            { id: 12, name: "深海沉思录", desc: "静谧沉静的幽蓝色调，情感如海水般深沉广阔", bg: "linear-gradient(135deg, #00c6ff, #0072ff)", textStyle: "0 0 10px #fff", icon: "🐳", particles: ['🫧', '✨', '💙'] },
+            { id: 13, name: "芝士草莓派", desc: "让人心情愉悦的暖心撞色，浓浓的烘焙甜美氛围", bg: "linear-gradient(135deg, #f857a6, #ff5858)", textStyle: "1px 1px 4px rgba(0,0,0,0.2)", icon: "🍰", particles: ['🍓', '❤️', '✨'] },
+            { id: 14, name: "薰衣草音符", desc: "温柔多情的法式浅紫，伴随跳动的旋律感", bg: "linear-gradient(135deg, #654ea3, #eaafc8)", textStyle: "0 0 10px #fff", icon: "🔮", particles: ['🎵', '✨', '💜'] },
+            { id: 15, name: "极光欧若拉", desc: "变幻莫测的冷艳极光色彩，充满史诗般高级美感", bg: "linear-gradient(135deg, #0575E6, #00F260)", textStyle: "0 0 8px #fff", icon: "🌌", particles: ['✨', '⭐', '💚'] },
+            { id: 16, name: "太妃焦糖颂", desc: "美式复古摩登咖色调，温暖内敛极具故事感", bg: "linear-gradient(135deg, #200122, #6f0000)", textStyle: "0 0 10px #ff6347", icon: "🧸", particles: ['✨', '🍂', '🤎'] },
+            { id: 17, name: "樱花吹雪时", desc: "落樱缤纷的纯正日系唯美，唯有浪漫永存", bg: "linear-gradient(to top, #fff1eb 0%, #ace0f9 100%)", textStyle: "1px 1px 3px #ff69b4", icon: "🌸", particles: ['🌸', '✨', '🤍'] },
+            { id: 18, name: "红蓝电光潮", desc: "强烈的国潮机能风撞色，帅气十足冷酷吸睛", bg: "linear-gradient(45deg, #3a7bd5, #3a6073)", textStyle: "0 0 12px #00ffff", icon: "🎧", particles: ['⚡', '✨', '🎵'] },
+            { id: 19, name: "阳光向日葵", desc: "灿烂夺目的明黄色调，带来满满正能量与希望", bg: "linear-gradient(135deg, #FDC830, #F37335)", textStyle: "1px 1px 3px #333", icon: "🌻", particles: ['✨', '🌻', '💛'] },
+            { id: 20, name: "温暖壁炉夜", desc: "美式经典冬日壁炉风，给人极具安全感的治愈", bg: "linear-gradient(135deg, #3d3d3d, #111111)", textStyle: "0 0 10px #ff4500", icon: "🔥", particles: ['✨', '💥', '❤️'] }
+        ];
+
+        // 关系语料库（新增同学、同事文案）
+        const blessingWording = {
+            lover: ["愿你眼里总有光芒，身边总有我相伴。新的一岁，被爱包围，暴富暴美！", "祝我的全世界生日快乐！承蒙遇见，爱你如初。愿你所求皆如愿！"],
+            friend: ["祝我最最好的铁子生日快乐！愿你暴富暴美，早日退休，卡里有钱，眼里有光！", "祝你生日快乐！感谢一路上有你陪伴，愿新的一岁里，开心无敌，友谊万岁！"],
+            classmate: ["祝同窗好友生日快乐！愿你此去繁花似锦，考试必过，前途无量，归来仍是少年！", "生日快乐呀！愿你在新的一岁里，学业有成，快乐加倍，天天都有好心情！"],
+            colleague: ["祝优秀的战友生日快乐！愿你新的一年里，KPI轻松翻倍，升职加薪，拒绝内卷，快乐搞钱！", "生日快乐！愿你在职场里一路开挂，生活里事事顺心，身体健康，财源滚滚！"],
+            family: ["愿您在新的一岁里，身体健康，平平安安，笑口常开。您辛苦了，生日快乐！", "祝您生日快乐！愿岁月温柔待您，福乐绵长，未来的每一天都充满阳光！"]
+        };
+
+        let currentTargetName = "";
+        let currentRelation = "";
+        let customText = "";
+        let particleIntervalId = null;
+        let qrCodeInstance = null; // 用于存储二维码实例，防止重复叠加
+
+        // 步骤 1：分析输入并展现20种样式
+        function generateStyleOptions() {
+            const nameInput = document.getElementById('input-name').value.trim();
+            if(!nameInput) { alert("请先输入寿星的姓名或称呼哦！"); return; }
+            
+            currentTargetName = nameInput;
+            currentRelation = document.getElementById('input-relation').value;
+            customText = document.getElementById('input-custom-text').value.trim(); // 抓取自定义寄语
+            
+            const listContainer = document.getElementById('style-list-container');
+            listContainer.innerHTML = ""; 
+
+            styleTemplates.forEach(style => {
+                const item = document.createElement('div');
+                item.className = 'style-item';
+                item.onclick = () => renderFinalCard(style);
+                item.innerHTML = `
+                    <div class="style-name">${style.id}. ${style.name} ${style.icon}</div>
+                    <div class="style-desc">${style.desc}</div>
+                `;
+                listContainer.appendChild(item);
+            });
+
+            document.getElementById('step-config').classList.add('hidden');
+            document.getElementById('step-select').classList.remove('hidden');
+        }
+
+        // 步骤 2：生成最终贺卡（触发音乐）
+        function renderFinalCard(style) {
+            document.body.style.background = style.bg;
+            const cardName = document.getElementById('card-name');
+            cardName.innerText = `祝 ${currentTargetName} 生日快乐`;
+            cardName.style.textShadow = style.textStyle;
+            document.getElementById('card-icon').innerText = style.icon;
+
+            // 核心逻辑：如果用户自己写了寄语，就用用户的；没写，才用语料库的
+            if (customText) {
+                document.getElementById('card-text').innerText = customText;
+            } else {
+                const texts = blessingWording[currentRelation];
+                const randomText = texts[Math.floor(Math.random() * texts.length)];
+                document.getElementById('card-text').innerText = randomText;
+            }
+
+            // 触发音频播放（符合浏览器安全策略）
+            const music = document.getElementById('bg-music');
+            music.play().catch(err => {
+                console.log("浏览器拦截了自动播放，需等待进一步交互: ", err);
+            });
+
+            // 粒子动效
+            if(particleIntervalId) clearInterval(particleIntervalId);
+            document.querySelectorAll('.particle').forEach(p => p.remove());
+            particleIntervalId = setInterval(() => createParticle(style.particles), 350);
+
+            document.getElementById('step-select').classList.add('hidden');
+            document.getElementById('step-card').classList.remove('hidden');
+        }
+
+        function createParticle(particlePool) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.innerText = particlePool[Math.floor(Math.random() * particlePool.length)];
+            particle.style.left = Math.random() * 100 + 'vw';
+            particle.style.fontSize = Math.random() * 15 + 14 + 'px';
+            particle.style.animationDuration = Math.random() * 4 + 3 + 's';
+            document.body.appendChild(particle);
+            setTimeout(() => { particle.remove(); }, 6000);
+        }
+
+        function goBackToConfig() {
+            document.getElementById('step-select').classList.add('hidden');
+            document.getElementById('step-config').classList.remove('hidden');
+        }
+        
+        function goBackToSelect() {
+            document.getElementById('step-card').classList.add('hidden');
+            document.getElementById('step-select').classList.remove('hidden');
+            document.body.style.background = "#11091c"; 
+            if(particleIntervalId) clearInterval(particleIntervalId);
+            document.querySelectorAll('.particle').forEach(p => p.remove());
+            // 暂停音乐
+            document.getElementById('bg-music').pause();
+        }
+
+        // 步骤 3：显示二维码（彻底修复卡死不弹出的Bug）
+        function showQR() {
+            const mask = document.getElementById('qrMask');
+            const qrcodeDiv = document.getElementById('qrcode');
+            
+            mask.classList.add('show'); // 展开遮罩
+            
+            // 清空旧的二维码，防止多次点击导致重复叠加
+            qrcodeDiv.innerHTML = ""; 
+
+            // 如果是在本地测试（网址是 file:// 开头），qrcode 插件有时会失效。
+            // 我们做个保险，如果网址无效，就默认生成当前域名的标准网址
+            let qrUrl = window.location.href;
+            if(qrUrl.startsWith('file://')) {
+                qrUrl = "https://github.com/"; // 本地测试环境保底，上线 GitHub 后会自动变成你真实的动态网址
+            }
+
+            // 重新创建二维码实例
+            qrCodeInstance = new QRCode(qrcodeDiv, {
+                text: qrUrl,
+                width: 160,
+                height: 160,
+                colorDark : "#11091c",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H // 提高容错率
+            });
+        }
+
+        function closeQR() { 
+            document.getElementById('qrMask').classList.remove('show'); 
+        }
+    </script>
+</body>
+</html>
