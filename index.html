@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>专属生日贺卡高级定制系统</title>
+    <!-- 引入生成二维码的工具 -->
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <style>
         * { box-sizing: border-box; transition: all 0.3s ease; }
@@ -72,7 +73,7 @@
         .btn:active { transform: scale(0.95); }
         .hidden { display: none !important; }
 
-        /* 二维码弹窗层 - 提高了 z-index 确保 100% 挡在最前面 */
+        /* 二维码弹窗层 */
         .qr-mask {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85);
             display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none;
@@ -91,8 +92,10 @@
 </head>
 <body>
 
+    <!-- 背景音乐音频标签（使用免版权的八音盒生日快乐歌） -->
     <audio id="bg-music" loop src="https://music.163.com/song/media/outer/url?id=4948834.mp3"></audio>
 
+    <!-- 1. 配置定制中心 -->
     <div id="step-config" class="box">
         <h2 style="margin-top:0; color:#ff69b4;">💝 贺卡高级定制中心</h2>
         <div class="form-group">
@@ -116,6 +119,7 @@
         <button class="btn" onclick="generateStyleOptions()">分析并生成20种样式方案</button>
     </div>
 
+    <!-- 2. 样式挑选方案界面 -->
     <div id="step-select" class="box hidden">
         <h3 style="margin-top:0; color:#ff69b4;">✨ 已为你量身定制20款样式</h3>
         <p style="font-size:0.8rem; color:#aaa; margin-bottom:10px;">点击下方任意一款方案即可预览最终动效与音乐</p>
@@ -123,6 +127,7 @@
         <button class="btn" style="background:#4a215d;" onclick="goBackToConfig()">返回修改信息</button>
     </div>
 
+    <!-- 3. 最终贺卡展示界面 -->
     <div id="step-card" class="box hidden">
         <div class="cake-icon wobble" id="card-icon">🎂</div>
         <h1 id="card-name">祝你生日快乐</h1>
@@ -131,6 +136,7 @@
         <button class="btn" style="background:rgba(255,255,255,0.15); color:#fff; margin-top:10px; box-shadow:none;" onclick="goBackToSelect()">重选样式与音乐</button>
     </div>
 
+    <!-- 二维码遮罩弹窗 -->
     <div class="qr-mask" id="qrMask" onclick="closeQR()">
         <div class="qr-box" onclick="event.stopPropagation()">
             <h3 style="margin: 0 0 10px 0; font-size: 1.1rem; color:#11091c;">🎁 贺卡封装完毕</h3>
@@ -140,8 +146,8 @@
         </div>
     </div>
 
+    <!-- 这里是严格封闭的脚本控制区 -->
     <script>
-        // 20种高级风格母版数据不变
         const styleTemplates = [
             { id: 1, name: "赛博霓虹派对", desc: "未来科技感发光特效，适合追求个性的年轻人", bg: "linear-gradient(180deg, #1a0e2e, #4a215d)", textStyle: "0 0 15px #ff69b4, 0 0 30px #ff1493", icon: "🔮", particles: ['✨', '⚡', '🎵'] },
             { id: 2, name: "落日余晖浪漫", desc: "温暖治愈的橘粉色调，定格最温柔的瞬间", bg: "linear-gradient(135deg, #f6d365 0%, #fda085 100%)", textStyle: "2px 2px 4px rgba(0,0,0,0.15)", icon: "🌅", particles: ['🌸', '✨', '💛'] },
@@ -165,7 +171,6 @@
             { id: 20, name: "温暖壁炉夜", desc: "美式经典冬日壁炉风，给人极具安全感的治愈", bg: "linear-gradient(135deg, #3d3d3d, #111111)", textStyle: "0 0 10px #ff4500", icon: "🔥", particles: ['✨', '💥', '❤️'] }
         ];
 
-        // 关系语料库（新增同学、同事文案）
         const blessingWording = {
             lover: ["愿你眼里总有光芒，身边总有我相伴。新的一岁，被爱包围，暴富暴美！", "祝我的全世界生日快乐！承蒙遇见，爱你如初。愿你所求皆如愿！"],
             friend: ["祝我最最好的铁子生日快乐！愿你暴富暴美，早日退休，卡里有钱，眼里有光！", "祝你生日快乐！感谢一路上有你陪伴，愿新的一岁里，开心无敌，友谊万岁！"],
@@ -178,16 +183,35 @@
         let currentRelation = "";
         let customText = "";
         let particleIntervalId = null;
-        let qrCodeInstance = null; // 用于存储二维码实例，防止重复叠加
 
-        // 步骤 1：分析输入并展现20种样式
+        // 全新整合：网页一加载，双重判断（本地表单或网址参数）
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const nameData = urlParams.get('name');
+            const relationData = urlParams.get('relation') || 'friend';
+            const textData = urlParams.get('text');
+
+            // 如果链接里带有 name 参数（说明是通过问卷跳转过来的真实买家场景）
+            if (nameData) {
+                currentTargetName = decodeURIComponent(nameData);
+                currentRelation = relationData;
+                customText = textData ? decodeURIComponent(textData) : "";
+
+                // 瞬间切入最终贺卡页面，展示第 1 种主题风格
+                document.getElementById('step-config').classList.add('hidden');
+                document.getElementById('step-select').classList.add('hidden');
+                renderFinalCard(styleTemplates[0]);
+            }
+        }
+
+        // 手动配置中心：分析输入展现20种样式
         function generateStyleOptions() {
             const nameInput = document.getElementById('input-name').value.trim();
             if(!nameInput) { alert("请先输入寿星的姓名或称呼哦！"); return; }
             
             currentTargetName = nameInput;
             currentRelation = document.getElementById('input-relation').value;
-            customText = document.getElementById('input-custom-text').value.trim(); // 抓取自定义寄语
+            customText = document.getElementById('input-custom-text').value.trim();
             
             const listContainer = document.getElementById('style-list-container');
             listContainer.innerHTML = ""; 
@@ -207,7 +231,7 @@
             document.getElementById('step-select').classList.remove('hidden');
         }
 
-        // 步骤 2：生成最终贺卡（触发音乐）
+        // 核心渲染函数：赋予皮肤、粒子和音乐
         function renderFinalCard(style) {
             document.body.style.background = style.bg;
             const cardName = document.getElementById('card-name');
@@ -215,7 +239,6 @@
             cardName.style.textShadow = style.textStyle;
             document.getElementById('card-icon').innerText = style.icon;
 
-            // 核心逻辑：如果用户自己写了寄语，就用用户的；没写，才用语料库的
             if (customText) {
                 document.getElementById('card-text').innerText = customText;
             } else {
@@ -224,13 +247,11 @@
                 document.getElementById('card-text').innerText = randomText;
             }
 
-            // 触发音频播放（符合浏览器安全策略）
+            // 播放音乐
             const music = document.getElementById('bg-music');
-            music.play().catch(err => {
-                console.log("浏览器拦截了自动播放，需等待进一步交互: ", err);
-            });
+            music.play().catch(err => { console.log("等待交互播放音乐: ", err); });
 
-            // 粒子动效
+            // 粒子特效重启
             if(particleIntervalId) clearInterval(particleIntervalId);
             document.querySelectorAll('.particle').forEach(p => p.remove());
             particleIntervalId = setInterval(() => createParticle(style.particles), 350);
@@ -261,68 +282,31 @@
             document.body.style.background = "#11091c"; 
             if(particleIntervalId) clearInterval(particleIntervalId);
             document.querySelectorAll('.particle').forEach(p => p.remove());
-            // 暂停音乐
             document.getElementById('bg-music').pause();
         }
 
-        // 步骤 3：显示二维码（彻底修复卡死不弹出的Bug）
+        // 二维码逻辑彻底封印跳转首页Bug
         function showQR() {
             const mask = document.getElementById('qrMask');
             const qrcodeDiv = document.getElementById('qrcode');
-            
-            mask.classList.add('show'); // 展开遮罩
-            
-            // 清空旧的二维码，防止多次点击导致重复叠加
+            mask.classList.add('show');
             qrcodeDiv.innerHTML = ""; 
 
-            // 如果是在本地测试（网址是 file:// 开头），qrcode 插件有时会失效。
-            // 我们做个保险，如果网址无效，就默认生成当前域名的标准网址
             let qrUrl = window.location.href;
-            if(qrUrl.startsWith('file://')) {
-                qrUrl = "https://github.com/"; // 本地测试环境保底，上线 GitHub 后会自动变成你真实的动态网址
+            // 本地测试环境保底，上GitHub后自动读取带参数的真实环境
+            if(qrUrl.startsWith('file://') || !qrUrl.includes('?')) {
+                qrUrl = `https://github.com/`; 
             }
 
-            // 重新创建二维码实例
-            qrCodeInstance = new QRCode(qrcodeDiv, {
+            new QRCode(qrcodeDiv, {
                 text: qrUrl,
-                width: 160,
-                height: 160,
-                colorDark : "#11091c",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H // 提高容错率
+                width: 160, height: 160,
+                colorDark : "#11091c", colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
             });
         }
 
-        function closeQR() { 
-            document.getElementById('qrMask').classList.remove('show'); 
-        }
+        function closeQR() { document.getElementById('qrMask').classList.remove('show'); }
     </script>
-// ====== 这一段是全新升级的自动识别并跳转逻辑 ======
-window.onload = function() {
-    // 1. 自动从网址抓取参数
-    const urlParams = new URLSearchParams(window.location.search);
-    const nameData = urlParams.get('name');
-    const relationData = urlParams.get('relation') || 'friend'; // 如果没传关系，默认给挚友
-    const textData = urlParams.get('text');
-
-    // 2. 核心判断：只要网址里填了“name（姓名）”，就说明是买家定制生成的链接！
-    if (nameData) {
-        // 强行把全局变量塞满
-        currentTargetName = decodeURIComponent(nameData);
-        currentRelation = relationData;
-        customText = textData ? decodeURIComponent(textData) : "";
-
-        // 根据关系，随便先挑选 20 种样式里的第 1 种（赛博霓虹派对）直接渲染展示！
-        const defaultStyle = styleTemplates[0]; 
-        
-        // 抹去第一步和第二步的输入框，直接亮出最终的大招（贺卡）
-        document.getElementById('step-config').classList.add('hidden');
-        document.getElementById('step-select').classList.add('hidden');
-        
-        // 调用渲染函数，直接放音乐、飘爱心
-        renderFinalCard(defaultStyle);
-    }
-}
-// ================================================
 </body>
 </html>
